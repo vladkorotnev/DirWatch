@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="DirWatch">
+</Property><Property Name="Solution File" Value="C:\Documents and Settings\Vladislav\My Documents\Visual Studio 2010\Projects\DirWatch\DirWatch.sln">
+</Property><Property Name="Date" Value="20 июля 2013 г.">
+</Property><Property Name="Time" Value="12:21">
+</Property></Properties><Event ErrorLevel="0" Project="DirWatch" Source="DirWatch\DirWatch.vbproj" Description="Project converted successfully">
+</Event><Event ErrorLevel="3" Project="DirWatch" Source="DirWatch\DirWatch.vbproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="DirWatch.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="DirWatch.sln" Description="Converted">
+</Event><Event ErrorLevel="0" Project="DirWatch" Source="DirWatch\DirWatch.vbproj" Description="Scan complete: Upgrade not required for project files.">
+</Event></UpgradeLog>
