@@ -21,3 +21,15 @@ C:\Documents and Settings\Vladislav\My Documents\Visual Studio 2010\Projects\Dir
 C:\Documents and Settings\Vladislav\My Documents\Visual Studio 2010\Projects\DirWatch\DirWatch\obj\Debug\DirWatch.Resources.resources
 C:\Documents and Settings\Vladislav\My Documents\Visual Studio 2010\Projects\DirWatch\DirWatch\obj\Debug\GenerateResource.read.1.tlog
 C:\Documents and Settings\Vladislav\My Documents\Visual Studio 2010\Projects\DirWatch\DirWatch\obj\Debug\GenerateResource.write.1.tlog
+Z:\Desktop\Coding\DirWatch\DirWatch\bin\Debug\DirWatch.exe.config
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\DirWatch.exe
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\DirWatch.xml
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\DirWatch.pdb
+Z:\Desktop\Coding\DirWatch\DirWatch\bin\Debug\DirWatch.exe
+Z:\Desktop\Coding\DirWatch\DirWatch\bin\Debug\DirWatch.pdb
+Z:\Desktop\Coding\DirWatch\DirWatch\bin\Debug\DirWatch.xml
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\ResolveAssemblyReference.cache
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\DirWatch.Form1.resources
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\DirWatch.Resources.resources
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\GenerateResource.read.1.tlog
+Z:\Desktop\Coding\DirWatch\DirWatch\obj\Debug\GenerateResource.write.1.tlog

@@ -1,6 +1,10 @@
-﻿Public Class Form1
+﻿Imports System.IO
+Imports System.Diagnostics
+
+Public Class Form1
     Dim first As Boolean = True
     Dim fileCache As New ArrayList
+    Dim watchfolder As FileSystemWatcher
     Enum ActionKind
         NoAction = -1
         ExecuteFile = 0
@@ -11,34 +15,183 @@
         End
 
     End Sub
-    Sub createCache()
-        fileCache.Clear()
 
-        For Each file In My.Computer.FileSystem.GetFiles(My.Settings.watchDir)
-            If Not fileCache.Contains(file) Then
-                fileCache.Add(file)
-                My.Settings.Save()
+    Sub onChange(ByVal source As Object, ByVal e As  _
+                        System.IO.FileSystemEventArgs)
+        If notificate.Checked Then
+            Dim title As String
+            Dim subtitle As String
+            Select Case e.ChangeType
+                Case WatcherChangeTypes.Changed
+                    title = "File changed"
+                    subtitle = "changed"
+                Case WatcherChangeTypes.Created
+                    title = "File created"
+                    subtitle = "created"
+                Case WatcherChangeTypes.Deleted
+                    title = "File deleted"
+                    subtitle = "deleted"
+                Case WatcherChangeTypes.Renamed
+                    Return 'not our cup of tea
+                Case Else
+                    title = "Folder change!"
+                    subtitle = "modified (or at least seems so)"
+            End Select
+            title = e.ChangeType.ToString
+            ico.ShowBalloonTip(500, title, _
+                               String.Format("{0} has been {1} in {2}", e.Name, subtitle, TextBox1.Text.Split("\").Last) _
+                               , ToolTipIcon.Info)
 
-            End If
+        End If
 
-        Next
-        For Each D In My.Computer.FileSystem.GetDirectories(My.Settings.watchDir)
-            If Not fileCache.Contains(D) Then
+        If My.Settings.action <> ActionKind.NoAction Then
+            Select Case My.Settings.action
+                Case ActionKind.ExecuteFile
+                    If My.Computer.FileSystem.FileExists(My.Settings.parameter) Then Shell(My.Settings.parameter, AppWinStyle.NormalNoFocus, False)
+                Case ActionKind.CopyFiles
+                    If e.ChangeType <> WatcherChangeTypes.Deleted Then
+                        Dim fff = e.FullPath
+                        If My.Computer.FileSystem.FileExists(fff) Then
+                            ' MsgBox("Moving " + fff + " as file")
+                            Try
+                                My.Computer.FileSystem.CopyFile(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
 
-                fileCache.Add(D)
-                My.Settings.Save()
-            End If
+                            Catch ex As Exception
 
-        Next
+                            End Try
+                        ElseIf My.Computer.FileSystem.DirectoryExists(fff) Then
+                            ' MsgBox("Moving " + fff + " as dir")
+                            Try
+                                My.Computer.FileSystem.CopyDirectory(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
+
+                            Catch ex As Exception
+
+                            End Try
+                        End If
+                    End If
+
+                Case ActionKind.MoveFiles
+                    Dim fff = e.FullPath
+                    If e.ChangeType <> WatcherChangeTypes.Deleted Then
+                        If My.Computer.FileSystem.FileExists(fff) Then
+                            '  MsgBox("Moving " + fff + " as file")
+                            Try
+                                My.Computer.FileSystem.MoveFile(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
+
+                            Catch ex As Exception
+                                'couldn't move so try on next scan
+                                fileCache.Remove(fff)
+                            End Try
+
+                        ElseIf My.Computer.FileSystem.DirectoryExists(fff) Then
+                            ' MsgBox("Moving " + fff + " as dir")
+                            Try
+                                My.Computer.FileSystem.MoveDirectory(fff, My.Settings.parameter + "\" + fff.Split("\").Last)
+
+                            Catch ex As Exception
+                                fileCache.Remove(fff)
+                            End Try
+
+                        End If
+                    End If
+            End Select
+        End If
+
+
     End Sub
 
+    Sub onRename(ByVal source As Object, ByVal e As  _
+                        System.IO.FileSystemEventArgs)
+        If notificate.Checked Then ico.ShowBalloonTip(500, "File renamed", _
+                              String.Format("{0} has been renamed in {1}", e.Name, TextBox1.Text.Split("\").Last) _
+                              , ToolTipIcon.Info)
+        If My.Settings.action <> ActionKind.NoAction Then
+            Select Case My.Settings.action
+                Case ActionKind.ExecuteFile
+                    If My.Computer.FileSystem.FileExists(My.Settings.parameter) Then Shell(My.Settings.parameter, AppWinStyle.NormalNoFocus, False)
+                Case ActionKind.CopyFiles
+                        Dim fff = e.FullPath
+                        If My.Computer.FileSystem.FileExists(fff) Then
+                            ' MsgBox("Moving " + fff + " as file")
+                            Try
+                                My.Computer.FileSystem.CopyFile(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
+
+                            Catch ex As Exception
+
+                            End Try
+                        ElseIf My.Computer.FileSystem.DirectoryExists(fff) Then
+                            ' MsgBox("Moving " + fff + " as dir")
+                            Try
+                                My.Computer.FileSystem.CopyDirectory(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
+
+                            Catch ex As Exception
+
+                            End Try
+                        End If
+
+                Case ActionKind.MoveFiles
+                    Dim fff = e.FullPath
+
+                    If My.Computer.FileSystem.FileExists(fff) Then
+                        '  MsgBox("Moving " + fff + " as file")
+                        Try
+                            My.Computer.FileSystem.MoveFile(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
+
+                        Catch ex As Exception
+                            'couldn't move so try on next scan
+                            fileCache.Remove(fff)
+                        End Try
+
+                    ElseIf My.Computer.FileSystem.DirectoryExists(fff) Then
+                        ' MsgBox("Moving " + fff + " as dir")
+                        Try
+                            My.Computer.FileSystem.MoveDirectory(fff, My.Settings.parameter + "\" + fff.Split("\").Last)
+
+                        Catch ex As Exception
+                            fileCache.Remove(fff)
+                        End Try
+
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Sub beginWatch()
+        If Not watchfolder Is Nothing Then watchfolder.EnableRaisingEvents = False : watchfolder.Dispose()
+        watchfolder = New System.IO.FileSystemWatcher()
+
+        'this is the path we want to monitor
+        watchfolder.Path = TextBox1.Text
+
+        'Add a list of Filter we want to specify
+        'make sure you use OR for each Filter as we need to
+        'all of those 
+
+        watchfolder.NotifyFilter = IO.NotifyFilters.DirectoryName
+        watchfolder.NotifyFilter = watchfolder.NotifyFilter Or _
+                                   IO.NotifyFilters.FileName
+        watchfolder.NotifyFilter = watchfolder.NotifyFilter Or _
+                                   IO.NotifyFilters.Attributes
+
+        ' add the handler to each event
+        AddHandler watchfolder.Changed, AddressOf onChange
+        AddHandler watchfolder.Created, AddressOf onChange
+        AddHandler watchfolder.Deleted, AddressOf onChange
+
+        ' add the rename handler as the signature is different
+        AddHandler watchfolder.Renamed, AddressOf onRename
+
+        'Set this property to true to start watching
+        watchfolder.EnableRaisingEvents = True
+
+    End Sub
     Private Sub Button3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button3.Click
         Me.WindowState = FormWindowState.Minimized
         Me.Hide()
-        createCache()
+        beginWatch()
 
         ico.Visible = True
-        timer.Enabled = True
         ico.ShowBalloonTip(1000, "Watching...", "Now watching " + My.Settings.watchDir.Split("\").Last + " for changes", ToolTipIcon.Info)
     End Sub
 
@@ -55,23 +208,14 @@
     End Sub
 
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
-       
-        delay.Value = My.Settings.delay
-        timer.Interval = My.Settings.delay
+
         TextBox1.Text = My.Settings.watchDir
 
-
     End Sub
 
-    Private Sub delay_ValueChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles delay.ValueChanged
-        My.Settings.delay = delay.Value
-        My.Settings.Save()
-        timer.Interval = delay.Value
-    End Sub
 
     Private Sub Form1_Shown(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Shown
         ico.Visible = False
-        timer.Enabled = False
         notificate.Checked = My.Settings.notify
         actionparam.Text = My.Settings.parameter
         action.SelectedIndex = My.Settings.action + 1
@@ -94,10 +238,8 @@
         End If
         If My.Settings.watchDir <> "" And first = True And My.Computer.FileSystem.DirectoryExists(My.Settings.watchDir) Then
             Me.Hide()
-            createCache()
-            Me.WindowState = FormWindowState.Minimized
-            timer.Enabled = True
             ico.Visible = True
+            BeginWatch()
         End If
         first = False
     End Sub
@@ -120,85 +262,9 @@
         Me.WindowState = FormWindowState.Normal
     End Sub
 
-    Private Sub timer_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles timer.Tick
-        Dim changes As Integer = 0
-        Dim changedFilenames As New ArrayList
-        For Each file In My.Computer.FileSystem.GetFiles(My.Settings.watchDir)
-            If Not fileCache.Contains(file) Then
-                fileCache.Add(file)
-                My.Settings.Save()
-                changes += 1
-                changedFilenames.Add(file)
-            End If
+    Private Sub timer_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs)
 
-        Next
-        For Each D In My.Computer.FileSystem.GetDirectories(My.Settings.watchDir)
-            If Not fileCache.Contains(D) Then
-                changes += 1
-                fileCache.Add(D)
-                My.Settings.Save()
-                changedFilenames.Add(D)
-            End If
-
-        Next
-        If changes > 0 And My.Settings.notify Then
-            If changes = 1 Then
-                ico.ShowBalloonTip(2000, "Folder changed!", changedFilenames.Item(0).ToString.Split("\").Last + " has been added to " + My.Settings.watchDir.Split("\").Last, ToolTipIcon.Info)
-            ElseIf changes = 2 Then
-                ico.ShowBalloonTip(2000, "Folder changed!", changedFilenames.Item(0).ToString.Split("\").Last + " and " + changedFilenames.Item(1).ToString.Split("\").Last + " have been added to " + My.Settings.watchDir.Split("\").Last, ToolTipIcon.Info)
-            Else
-                ico.ShowBalloonTip(2000, "Folder changed!", changedFilenames.Item(0).ToString.Split("\").Last + ", " + changedFilenames.Item(1).ToString.Split("\").Last + " and " + CStr(changes - 2) + " more files have been added to " + My.Settings.watchDir.Split("\").Last, ToolTipIcon.Info)
-            End If
-        End If
-        If My.Settings.action <> ActionKind.NoAction And changes > 0 Then
-            Select Case My.Settings.action
-                Case ActionKind.ExecuteFile
-                    If My.Computer.FileSystem.FileExists(My.Settings.parameter) Then Shell(My.Settings.parameter, AppWinStyle.NormalNoFocus, False)
-                Case ActionKind.CopyFiles
-                    For Each fff As String In changedFilenames
-                        If My.Computer.FileSystem.FileExists(fff) Then
-                            ' MsgBox("Moving " + fff + " as file")
-                            Try
-                                My.Computer.FileSystem.CopyFile(fff, My.Settings.parameter + "\" + fff.Split("\").Last)
-
-                            Catch ex As Exception
-                                fileCache.Remove(fff)
-                            End Try
-                        ElseIf My.Computer.FileSystem.DirectoryExists(fff) Then
-                            ' MsgBox("Moving " + fff + " as dir")
-                            Try
-                                My.Computer.FileSystem.CopyDirectory(fff, My.Settings.parameter + "\" + fff.Split("\").Last)
-
-                            Catch ex As Exception
-                                fileCache.Remove(fff)
-                            End Try
-                        End If
-                    Next
-                Case ActionKind.MoveFiles
-                    For Each fff As String In changedFilenames
-                        If My.Computer.FileSystem.FileExists(fff) Then
-                            '  MsgBox("Moving " + fff + " as file")
-                            Try
-                                My.Computer.FileSystem.MoveFile(fff, My.Settings.parameter + "\" + fff.Split("\").Last, True)
-
-                            Catch ex As Exception
-                                'couldn't move so try on next scan
-                                fileCache.Remove(fff)
-                            End Try
-
-                        ElseIf My.Computer.FileSystem.DirectoryExists(fff) Then
-                            ' MsgBox("Moving " + fff + " as dir")
-                            Try
-                                My.Computer.FileSystem.MoveDirectory(fff, My.Settings.parameter + "\" + fff.Split("\").Last)
-
-                            Catch ex As Exception
-                                fileCache.Remove(fff)
-                            End Try
-
-                        End If
-                    Next
-            End Select
-        End If
+       
     End Sub
 
     Private Sub action_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles action.SelectedIndexChanged
@@ -248,5 +314,10 @@
     Private Sub notificate_CheckedChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles notificate.CheckedChanged
         My.Settings.notify = notificate.Checked
         My.Settings.Save()
+    End Sub
+
+    Private Sub Label2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Label2.Click
+        Label2.Text = Label2.Text.Replace("vladkorotnev", "AkasakaRyuunosuke")
+
     End Sub
 End Class
